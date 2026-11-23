@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sözlük Filtreleme</title>
+<style>
+:root{--bg:#f5f7fa;--card:#fff;--tx:#1d2733;--mut:#5d6b7a;--ac:#1f6feb;--bd:#cfd8e3}
+@media(prefers-color-scheme:dark){:root{--bg:#161b22;--card:#1f262f;--tx:#e6edf3;--mut:#9aa7b4;--ac:#4c9aff;--bd:#38424e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,Segoe UI,Arial,sans-serif;padding:16px}
+.w{max-width:900px;margin:0 auto}
+h1{font-size:22px;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:12px}
+label{font-weight:600;display:block;margin-bottom:4px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+input[type=text]{width:100%;padding:9px 10px;font-size:18px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips label{font-weight:400;border:1px solid var(--bd);border-radius:8px;padding:4px 10px;margin:0;cursor:pointer;user-select:none}
+.chips label:has(input:checked){background:var(--ac);border-color:var(--ac);color:#fff}
+.chips input{display:none}
+button{font:inherit;padding:9px 18px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--tx);cursor:pointer}
+button.p{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600;font-size:18px;padding:10px 28px}
+button.s{padding:3px 12px;font-size:14px}
+.tip{position:relative;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid var(--mut);color:var(--mut);font-size:12px;font-weight:700;cursor:help;vertical-align:middle;margin-left:4px;outline:none}
+.tip:hover,.tip:focus{border-color:var(--ac);color:var(--ac)}
+.tt{position:absolute;left:0;top:26px;z-index:20;width:min(290px,80vw);padding:10px 12px;border-radius:8px;background:var(--card);color:var(--tx);border:1px solid var(--ac);box-shadow:0 6px 18px rgba(0,0,0,.2);font-size:13px;font-weight:400;line-height:1.5;text-align:left;opacity:0;visibility:hidden;transition:opacity .15s;pointer-events:none}
+.tip:hover .tt,.tip:focus .tt{opacity:1;visibility:visible}
+.hint{color:var(--mut);font-size:13px;margin-top:4px}
+#list{columns:140px auto;column-gap:12px;font-size:16px;word-break:break-all}
+#list div{break-inside:avoid}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.src{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid var(--bd);border-radius:8px;padding:4px 10px;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="w">
+<h1>Sözlük Filtreleme</h1>
+
+<div class="card">
+  <label for="dosya">1. Sözlük dosyası yükle / ekle (.txt, her satırda bir kelime)</label>
+  <input type="file" id="dosya" accept=".txt,text/plain" multiple>
+  <div class="hint">Birden fazla dosya seçebilirsin; kelimeler birleştirilir. İkinci dosyayı eklediğinde ana sözlükte olmayan yeni kelimeler aşağıda listelenir.</div>
+  <div class="hint" id="durum">Henüz dosya yüklenmedi.</div>
+  <div id="kaynaklar"></div>
+  <div class="bar" style="margin-top:10px">
+    <button id="tumunu" style="display:none">Tüm sözlüğü kaydet (TXT)</button>
+    <button id="hepsiniSil" style="display:none">Tümünü sil</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="row">
+    <div><label for="bas">Şununla başlar <span class="tip" tabindex="0">?<span class="tt">Kelimenin başlangıç harfleri.<br><b>Örnek:</b> <i>ay</i> → ayak, ayva, aylık</span></span></label><input type="text" id="bas" placeholder="ör. ay" autocomplete="off"></div>
+    <div><label for="bit">Şununla biter <span class="tip" tabindex="0">?<span class="tt">Kelimenin bitiş harfleri.<br><b>Örnek:</b> <i>lı</i> → akıllı, bağlı, yağlı<br>Başlangıçla birlikte yazarsan arada en az bir harf olan kelimeler gelir: <i>ak</i> + <i>lı</i> → akıllı.</span></span></label><input type="text" id="bit" placeholder="ör. lı" autocomplete="off"></div>
+    <div><label for="icer">İçinde geçer (peş peşe) <span class="tip" tabindex="0">?<span class="tt">Harfler yan yana ve yazdığın sırayla geçer, kelimenin neresinde olduğu önemli değil.<br><b>Örnek:</b> <i>ar</i> → kara, mart, arı</span></span></label><input type="text" id="icer" placeholder="ör. ar" autocomplete="off"></div>
+    <div><label for="harf">Şu harfleri içersin (sırasız) <span class="tip" tabindex="0">?<span class="tt">Yazdığın harflerin hepsi kelimede bulunur; sırası ve yeri önemli değil, başka harfler de olabilir.<br><b>Örnek:</b> <i>l k m</i> → kalem, kemal, malik<br>Aynı harfi iki kere yazarsan o harften iki tane arar.</span></span></label><input type="text" id="harf" placeholder="ör. l k m" autocomplete="off"></div>
+    <div><label for="kalip">Aralıklı kalıp <span class="tip" tabindex="0">?<span class="tt">Çengel bulmaca için: bilinen harfleri yaz, bilinmeyen her harf yerine <b>*</b> koy. Her * tam bir harftir; kelimenin uzunluğu işaret ve harf sayısı kadar olur.<br><b>Örnek:</b> <i>k*l*m</i> → kalem, kelam, kalım (5 harfli)<br><i>a***</i> → a ile başlayan 4 harfli kelimeler<br><b>?</b>, <b>_</b> ve <b>.</b> da * gibi çalışır.</span></span></label><input type="text" id="kalip" placeholder="ör. k*l*m" autocomplete="off"></div>
+  </div>
+  <div style="margin-top:12px">
+    <label>Harf sayısı (birden fazla seçilebilir, hiçbiri seçili değilse fark etmez)</label>
+    <div class="chips" id="lens"></div>
+  </div>
+  <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+    <button class="p" id="ara">Ara</button>
+    <button id="temizle">Temizle</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="bar">
+    <strong id="sayi">Sonuç yok</strong>
+    <button id="kopya">Listeyi kopyala</button>
+    <button id="indir">Sonucu TXT olarak kaydet</button>
+  </div>
+  <div id="list"></div>
+</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const tr = s => s.toLocaleLowerCase("tr").trim();
+const sirala = (a, b) => a.localeCompare(b, "tr");
+const sayi = n => n.toLocaleString("tr");
+let sources = [], words = [], found = [];
+
+for (let n = 2; n <= 16; n++) {
+  const l = document.createElement("label");
+  l.innerHTML = '<input type="checkbox" value="' + n + '">' + (n === 16 ? "16+" : n);
+  $("lens").appendChild(l);
+}
+
+function goster(liste, baslik) {
+  found = liste;
+  const MAX = 3000;
+  $("sayi").textContent = sayi(liste.length) + " " + baslik + (liste.length > MAX ? " (ekranda ilk 3000, kopyala ve kaydet hepsini alır)" : "");
+  $("list").innerHTML = liste.slice(0, MAX).map(w => "<div>" + w.replace(/[&<>]/g, "") + "</div>").join("");
+}
+
+function birlestir() {
+  words = [...new Set(sources.flatMap(s => s.words))].sort(sirala);
+}
+
+function kaynakGoster() {
+  const k = $("kaynaklar");
+  k.innerHTML = "";
+  sources.forEach((s, i) => {
+    const d = document.createElement("div");
+    d.className = "src";
+    const t = document.createElement("span");
+    t.textContent = s.name + " (" + sayi(s.words.length) + " kelime)";
+    const b = document.createElement("button");
+    b.className = "s"; b.textContent = "Sil"; b.dataset.i = i;
+    d.append(t, b);
+    k.appendChild(d);
+  });
+  const var_ = sources.length > 0;
+  $("tumunu").style.display = var_ ? "" : "none";
+  $("hepsiniSil").style.display = var_ ? "" : "none";
+  if (var_) $("durum").textContent = "Toplam " + sayi(words.length) + " kelime hazır.";
+  else $("durum").textContent = "Henüz dosya yüklenmedi.";
+}
+
+async function dosyaOku(f) {
+  const buf = await f.arrayBuffer();
+  let txt;
+  try { txt = new TextDecoder("utf-8", { fatal: true }).decode(buf); }
+  catch (_) { txt = new TextDecoder("windows-1254").decode(buf); }
+  return [...new Set(txt.split(/\r?\n/).map(tr).filter(Boolean))];
+}
+
+$("dosya").addEventListener("change", async e => {
+  const fl = [...e.target.files];
+  if (!fl.length) return;
+  const once = new Set(words);
+  for (const f of fl) {
+    const w = await dosyaOku(f);
+    sources = sources.filter(s => s.name !== f.name);
+    sources.push({ name: f.name, words: w });
+  }
+  birlestir(); kaydet(); kaynakGoster();
+  if (once.size) goster(words.filter(w => !once.has(w)), "yeni kelime eklendi");
+  e.target.value = "";
+});
+
+$("kaynaklar").addEventListener("click", e => {
+  const b = e.target.closest("button[data-i]");
+  if (!b) return;
+  const s = sources.splice(+b.dataset.i, 1)[0];
+  birlestir(); kaydet(); kaynakGoster();
+  found = []; $("list").innerHTML = ""; $("sayi").textContent = "Sonuç yok";
+  $("durum").textContent = s.name + " silindi. Kalan " + sayi(words.length) + " kelime.";
+});
+
+$("hepsiniSil").onclick = () => {
+  sources = []; words = []; found = []; kaydet(); kaynakGoster();
+  $("list").innerHTML = ""; $("sayi").textContent = "Sonuç yok";
+  $("durum").textContent = "Tüm sözlük silindi. Yeni dosya yükleyebilirsin.";
+};
+
+function indirTxt(liste, ad) {
+  if (!liste.length) return;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([liste.join("\r\n")], { type: "text/plain;charset=utf-8" }));
+  a.download = ad; a.click(); URL.revokeObjectURL(a.href);
+}
+$("tumunu").onclick = () => indirTxt(words, "tum-sozluk.txt");
+$("indir").onclick = () => indirTxt(found, "sonuc.txt");
+
+function kalipRegex(v) {
+  const p = tr(v).replace(/\s+/g, "");
+  if (!p) return null;
+  let r = "";
+  for (const ch of p) r += "?_*.".includes(ch) ? "." : ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp("^" + r + "$");
+}
+
+function ara() {
+  if (!words.length) { $("sayi").textContent = "Önce sözlük dosyasını yükle."; return; }
+  const s = tr($("bas").value), e = tr($("bit").value), c = tr($("icer").value);
+  const rx = kalipRegex($("kalip").value);
+  const need = {};
+  for (const ch of tr($("harf").value)) if (/\p{L}/u.test(ch)) need[ch] = (need[ch] || 0) + 1;
+  const needs = Object.entries(need);
+  const L = [...document.querySelectorAll("#lens input:checked")].map(x => +x.value);
+  const r = words.filter(w => {
+    if (s && !w.startsWith(s)) return false;
+    if (e && !w.endsWith(e)) return false;
+    if (s && e && w.length < s.length + e.length + 1) return false;
+    if (c && !w.includes(c)) return false;
+    if (rx && !rx.test(w)) return false;
+    if (needs.length) {
+      const cnt = {};
+      for (const ch of w) cnt[ch] = (cnt[ch] || 0) + 1;
+      if (needs.some(([ch, n]) => (cnt[ch] || 0) < n)) return false;
+    }
+    if (L.length && !L.some(x => x === 16 ? w.length >= 16 : w.length === x)) return false;
+    return true;
+  });
+  goster(r, "kelime bulundu");
+}
+
+$("ara").onclick = ara;
+document.querySelectorAll("input[type=text]").forEach(i => i.addEventListener("keydown", e => { if (e.key === "Enter") ara(); }));
+$("temizle").onclick = () => {
+  document.querySelectorAll("input[type=text]").forEach(i => i.value = "");
+  document.querySelectorAll("#lens input").forEach(i => i.checked = false);
+  found = []; $("list").innerHTML = ""; $("sayi").textContent = "Sonuç yok";
+};
+$("kopya").onclick = async () => {
+  if (!found.length) return;
+  const t = found.join("\n");
+  try { await navigator.clipboard.writeText(t); }
+  catch (_) { const a = document.createElement("textarea"); a.value = t; document.body.appendChild(a); a.select(); document.execCommand("copy"); a.remove(); }
+  $("kopya").textContent = "Kopyalandı ✓"; setTimeout(() => $("kopya").textContent = "Listeyi kopyala", 1500);
+};
+
+// Sözlükleri tarayıcıda saklama (IndexedDB)
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("sozluk-filtre", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("k");
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function kaydet() {
+  try {
+    const d = await idb();
+    const st = d.transaction("k", "readwrite").objectStore("k");
+    if (sources.length) st.put({ sources }, "sozluk"); else st.delete("sozluk");
+  } catch (_) {}
+}
+async function oku() {
+  try {
+    const d = await idb();
+    return await new Promise(res => { const q = d.transaction("k").objectStore("k").get("sozluk"); q.onsuccess = () => res(q.result); q.onerror = () => res(null); });
+  } catch (_) { return null; }
+}
+oku().then(v => {
+  if (!v) return;
+  if (v.sources) sources = v.sources;
+  else if (v.words) sources = [{ name: v.name || "kayıtlı sözlük", words: v.words }];
+  if (sources.length) { birlestir(); kaynakGoster(); $("durum").textContent += " (kayıtlı sözlükler otomatik yüklendi)"; }
+});
+</script>
+</body>
+</html>

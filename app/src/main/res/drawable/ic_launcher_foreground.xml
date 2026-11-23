@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Crossword 2x2 grid + search/puzzle tiles centered in 66dp safe zone (24..84) -->
+    <!-- Top-left tile (Ivory) -->
+    <path
+        android:fillColor="#FAF8F2"
+        android:pathData="M28,28h23a4,4 0 0 1 4,4v23a4,4 0 0 1 -4,4H28a4,4 0 0 1 -4,-4V32a4,4 0 0 1 4,-4z" />
+    <!-- Top-right tile (Amber accent) -->
+    <path
+        android:fillColor="#F0944D"
+        android:pathData="M59,28h21a4,4 0 0 1 4,4v21a4,4 0 0 1 -4,4H59a4,4 0 0 1 -4,-4V32a4,4 0 0 1 4,-4z" />
+    <!-- Bottom-left tile (Amber accent) -->
+    <path
+        android:fillColor="#F0944D"
+        android:pathData="M28,59h21a4,4 0 0 1 4,4v17a4,4 0 0 1 -4,4H28a4,4 0 0 1 -4,-4V63a4,4 0 0 1 4,-4z" />
+    <!-- Bottom-right magnifying lens ring (Ivory) -->
+    <path
+        android:fillColor="#FAF8F2"
+        android:pathData="M67,56c-6.627,0 -12,5.373 -12,12s5.373,12 12,12c2.65,0 5.098,-0.862 7.084,-2.317l6.608,6.609a2.5,2.5 0 0 0 3.536,-3.536l-6.609,-6.608C79.138,72.098 80,69.65 80,67c0,-6.627 -5.373,-12 -12,-12zM67,61a7,7 0 1 1 0,14 7,7 0 0 1 0,-14z" />
+    <!-- Letter 'S' cutout bar inside top-left tile -->
+    <path
+        android:fillColor="#123A7A"
+        android:pathData="M34,36h11v3.5h-7.5v2.5h5.5c1.5,0 2.5,1 2.5,2.5v3.5c0,1.5 -1,2.5 -2.5,2.5H33v-3.5h8v-2.5h-5.5c-1.5,0 -2.5,-1 -2.5,-2.5v-3.5c0,-1.5 1,-2.5 2.5,-2.5z" />
+</vector>
