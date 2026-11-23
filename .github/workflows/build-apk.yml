@@ -1,0 +1,43 @@
+name: APK derle
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodu al
+        uses: actions/checkout@v4
+
+      - name: Java kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Gradle kur
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.3.1"
+
+      - name: Android lisanslarını kabul et
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      - name: Debug imza anahtarı oluştur
+        run: >
+          keytool -genkeypair -v -keystore debug.keystore
+          -storepass android -alias androiddebugkey -keypass android
+          -keyalg RSA -keysize 2048 -validity 10000
+          -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: APK derle
+        run: gradle assembleDebug --stacktrace
+
+      - name: APK dosyasını yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: sozluk-filtre-apk
+          path: app/build/outputs/apk/debug/*.apk
